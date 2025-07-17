@@ -107,7 +107,7 @@ if (!$NonInteractive) {
 			}
 		} until ($valid)
 		
-		$threshold = (Get-Date).AddYears(-$years)
+		$threshold = (Get-Date).AddYears(-$yearsInput)
 		
 		# retrieve stale profiles
 		$targetProfiles = Get-CimInstance Win32_UserProfile |
