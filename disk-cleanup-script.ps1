@@ -3,7 +3,7 @@ param(
 	[switch]$NonInteractive
 )
 
-Write-Output "Disk Cleanup Script v2.0" -ForegroundColor Red
+Write-Host "Disk Cleanup Script v2.0" -ForegroundColor Red
 
 if ($NonInteractive) {
 	Write-Output "Running in non-interactive mode."
@@ -36,7 +36,7 @@ if (!$NonInteractive) {
 	if ($response -eq "Y") {
 		Write-Host "Starting..."
 		Get-ChildItem 'C:\Users' -Directory | ForEach-Object {
-			$tempPath = Join-Path $_.FSullName 'AppData\Local\Temp'
+			$tempPath = Join-Path $_.FullName 'AppData\Local\Temp'
 			if (Test-Path $tempPath) {
 				Write-Host "Clearing folder $tempPath ..."
 				Remove-Item "$tempPath\*" -Recurse -Force -ErrorAction SilentlyContinue
@@ -101,7 +101,7 @@ if (!$NonInteractive) {
 		do {
 			Write-Host "Please enter a number of years (e.g. 2) as the inactivity threshold. Must be greater than 1."
 			$yearsInput = Read-Host "User folders that have not been accessed for x years will be removed."
-			$valid = [int]::TryParse($yearsInput, [ref]$years) -and ($years -gt 1)
+			$valid = [int]::TryParse($yearsInput, [ref]$yearsInput) -and ($yearsInput -gt 1)
 			if (-not $valid) {
 				Write-Host "Invalid input. Please read the instruction prompt." -ForegroundColor Red
 			}
