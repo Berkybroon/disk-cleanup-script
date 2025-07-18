@@ -107,31 +107,31 @@ if (!$NonInteractive) {
 				Write-Host "Invalid input. Please read the instruction prompt." -ForegroundColor Red
 			}
 		} until ($valid)
-		
+
 		$threshold = (Get-Date).AddYears(-$years)
-	
+
 		# get stale profile folders by LastAccessTime
 		$staleFolders = Get-ChildItem 'C:\Users' -Directory |
 			Where-Object {
 				$_.Name -notin @('Public', 'Default', 'Default User', 'All Users', 'Administrator', 'DefaultAppPool') -and
 				$_.LastWriteTime -lt $threshold
 			}
-		
+
 		# convert to full paths and make an array of associated profiles
 		$staleFolderPaths = $staleFolders.FullName	
 		$targetProfiles = Get-CimInstance Win32_UserProfile | Where-Object {
 			$_.LocalPath -in $staleFolderPaths
 		}
-	
+
 		# final confirmation before deleting
 		if ($targetProfiles) {
 			Write-Host "The following profiles have not been accessed within the given time frame ($threshold):"
-			$targetProfiles | Select-Object LocalPath, @{Name='LastUse';Expression={[datetime]::FromFileTime($_.LastUseTime)}} | Format-Table -AutoSize
+			$targetProfiles | Select-Object LocalPath | Format-Table -AutoSize
 		
 			$response = Read-Host "Proceed with removal?"
 			if ($response -eq "Y") {	
 				$targetProfiles | ForEach-Object {
-					Write-Host "Deleting: $($_.LocalPath)"
+					Write-Host "Removing: $($_.LocalPath)"
 					$_ | Remove-CimInstance -Confirm:$false
 				}
 				Write-Host "Done!"
