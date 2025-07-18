@@ -99,25 +99,31 @@ if (!$NonInteractive) {
 	if ($response -eq "Y") {
 		# prompt for threshold (in years)
 		do {
+			$years = 0
 			Write-Host "Please enter a number of years (e.g. 2) as the inactivity threshold. Must be greater than 1."
 			$yearsInput = Read-Host "User folders that have not been accessed for x years will be removed."
-			$valid = [int]::TryParse($yearsInput, [ref]$yearsInput) -and ($yearsInput -gt 1)
+			$valid = [int]::TryParse($yearsInput, [ref]$years) -and ($years -gt 1)
 			if (-not $valid) {
 				Write-Host "Invalid input. Please read the instruction prompt." -ForegroundColor Red
 			}
 		} until ($valid)
 		
-		$threshold = (Get-Date).AddYears(-$yearsInput)
-		
-		# retrieve stale profiles
-		$targetProfiles = Get-CimInstance Win32_UserProfile |
+		$threshold = (Get-Date).AddYears(-$years)
+	
+		# get stale profile folders by LastAccessTime
+		$staleFolders = Get-ChildItem 'C:\Users' -Directory |
 			Where-Object {
-				-not $_.Special -and
-				-not $_.Loaded -and
-				$_.LastUseTime -lt $threshold
+				$_.Name -notin @('Public', 'Default', 'Default User', 'All Users', 'Administrator', 'DefaultAppPool') -and
+				$_.LastWriteTime -lt $threshold
 			}
-
-		# final confirmation
+		
+		# convert to full paths and make an array of associated profiles
+		$staleFolderPaths = $staleFolders.FullName	
+		$targetProfiles = Get-CimInstance Win32_UserProfile | Where-Object {
+			$_.LocalPath -in $staleFolderPaths
+		}
+	
+		# final confirmation before deleting
 		if ($targetProfiles) {
 			Write-Host "The following profiles have not been accessed within the given time frame ($threshold):"
 			$targetProfiles | Select-Object LocalPath, @{Name='LastUse';Expression={[datetime]::FromFileTime($_.LastUseTime)}} | Format-Table -AutoSize
@@ -133,7 +139,7 @@ if (!$NonInteractive) {
 				Write-Host "Operation aborted."
 			}
 		} else {
-			Write-Host "No stale profiles older than $years discovered."
+			Write-Host "No stale profiles older than $years years discovered."
 		}
 	}
 }
